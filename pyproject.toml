@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "2gis_coming_leaving_time"
+version = "0.1.0"
+description = "Test work to 2gis: process XML file, and make small analytic with persons and time coming/leaving"
+authors = ["Anton Batishchev <antonbat125a@ya.ru>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
