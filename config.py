@@ -1,0 +1,5 @@
+DEBUG = True
+
+DB_ENGINE = 'sqlite:///db.sqlite3'
+COUNT_PERSONS_TO_WRITE_IN_DB_FOR_ONE_QUERY = 100000
+DATETIME_FORMAT = '%d-%m-%Y %H:%M:%S'
