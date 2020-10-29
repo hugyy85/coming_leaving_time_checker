@@ -6,6 +6,8 @@ import sys
 from models import PersonTimeChecker, Session
 from config import DATETIME_FORMAT, COUNT_PERSONS_TO_WRITE_IN_DB_FOR_ONE_QUERY, DEBUG
 
+from sqlalchemy import func, and_
+
 
 log = logging.getLogger(__name__)
 log.level = logging.DEBUG if DEBUG else logging.ERROR
@@ -90,26 +92,24 @@ def insert_data_from_xml_to_db(file_name):
     return
 
 
-def calculate_time():
+def get_worked_time(report_id: int, person: str = None, from_date: datetime = None, to_date: datetime = None) -> list:
     session = Session()
-    query = session.query(PersonTimeChecker).all()
-    # q = int(query.leaving_datetime.strftime('%s')) - int(query.coming_datetime.strftime('%s'))
-    a = session.query(PersonTimeChecker).group_by(query.coming_datetime.date())
-    query = query.sum().all()
-    q = ''
-    """
-    SELECT date(coming_datetime) as dc,
-        sum(strftime('%s' , leaving_datetime) - strftime('%s' , coming_datetime)) as diff from coming_leaving
-        GROUP BY dc
-        HAVING diff
-        ;
-    """
-    """
-        SELECT date(coming_datetime) as dc,
-        sum(strftime('%s' , leaving_datetime) - strftime('%s' , coming_datetime)) as diff from coming_leaving
-		where dc BETWEEN "2011-12-22" AND "2011-12-23"
-        GROUP BY dc
-        HAVING diff
-    """
+    seconds = func.sum(
+        func.strftime('%s', PersonTimeChecker.leaving_datetime) - func.strftime('%s', PersonTimeChecker.coming_datetime)
+    )
+    grouped_date = func.date(PersonTimeChecker.coming_datetime).label('grouped_date')
+    query = session.query(
+        grouped_date, seconds)\
+        .group_by('grouped_date').filter_by(report_id=report_id)
+    if person:
+        query = query.filter_by(full_name=person)
 
-calculate_time()
+    if from_date and to_date:
+        query = query.filter(and_(grouped_date >= from_date.date(), grouped_date <= to_date.date()))
+    elif from_date and not to_date:
+        query = query.filter(grouped_date >= from_date.date())
+    elif not from_date and to_date:
+        query = query.filter(grouped_date <= to_date.date())
+
+    hours = {x[0]: round(x[1] / 3600, 2) for x in query.all()}
+    return hours
