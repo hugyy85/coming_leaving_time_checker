@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block content %}
+<ol>
+    {% for report in reports %}
+
+    <li><a href="/results/{{ report.report_id }}">Отчет №{{ report.report_id }} - {{ report.report_name }}</a></li>
+    {% endfor %}
+</ol>
+{% endblock %}

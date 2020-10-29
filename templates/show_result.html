@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block content %}
+    <h3>Выберете интересующие вас даты</h3>
+     <form method="get">
+    <div class="row">
+        <div class="col-3">
+        <input type="date" class="form-control" id="from_date" name="from_date" placeholder="Начало периода">
+        </div>
+        <div class="col-3">
+        <input type="date" class="form-control" id="to_date" name="to_date" placeholder="Конец периода">
+        </div>
+    </div>
+
+     <div class="row">
+         <div class="col-3">
+             <select id="select" class="mdb-select md-form" name="person">
+                 <option value="">Не выбрано</option>
+                 {% for person in persons %}
+                  <option value="{{ person.full_name }}">{{ person.full_name }}</option>
+                  {% endfor %}
+             </select>
+         </div>
+     </div>
+     <div class="row">
+        <div class="col-3">
+        <input type="submit" class="btn btn-primary" value="Проверить">
+        </div>
+     </div>
+     </form>
+    <hr>
+    <div class="row">
+            <div class="col-1">
+              №
+            </div>
+            <div class="col-3">
+              Дата
+            </div>
+            <div class="col-4">
+              Количество отработанных часов {{ who_worked if who_worked else "всеми сотрудниками" }}
+            </div>
+      </div>
+    {% for date, hour in work_hours.items() %}
+        <div class="row">
+            <div class="col-1">
+              {{ loop.index }}
+            </div>
+            <div class="col-3">
+              {{ date.strftime('%d.%m.%Y') }}
+            </div>
+            <div class="col-4">
+              {{ hour }}
+            </div>
+      </div>
+    {% endfor %}
+{% endblock %}

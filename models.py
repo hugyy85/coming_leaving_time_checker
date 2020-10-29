@@ -1,6 +1,6 @@
 from config import DEBUG, DB_ENGINE
 
-from sqlalchemy import Column, DateTime, VARCHAR,Integer
+from sqlalchemy import Column, DateTime, VARCHAR, Integer, ForeignKey
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -9,7 +9,7 @@ from sqlalchemy.orm import sessionmaker
 Base = declarative_base()
 
 
-engine = create_engine(DB_ENGINE, echo=DEBUG)
+engine = create_engine(DB_ENGINE, echo=False)
 
 
 class PersonTimeChecker(Base):
@@ -19,7 +19,14 @@ class PersonTimeChecker(Base):
     full_name = Column(VARCHAR(255), nullable=False)
     coming_datetime = Column(DateTime, nullable=False)
     leaving_datetime = Column(DateTime, nullable=False)
-    report_id = Column(Integer, nullable=False, unique=False)
+    report_id = Column(Integer, ForeignKey("reports.report_id"), nullable=False)
+
+
+class Report(Base):
+    __tablename__ = 'reports'
+
+    report_id = Column(Integer, primary_key=True)
+    report_name = Column(VARCHAR(1024), nullable=False)
 
 
 Base.metadata.create_all(engine)

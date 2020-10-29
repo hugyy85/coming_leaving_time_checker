@@ -1,31 +1,20 @@
 from xml.etree.ElementTree import iterparse
 from datetime import datetime, timedelta
-import logging
-import sys
 
-from models import PersonTimeChecker, Session
-from config import DATETIME_FORMAT, COUNT_PERSONS_TO_WRITE_IN_DB_FOR_ONE_QUERY, DEBUG
+from models import PersonTimeChecker, Session, Report
+from config import DATETIME_FORMAT, COUNT_PERSONS_TO_WRITE_IN_DB_FOR_ONE_QUERY, log
 
 from sqlalchemy import func, and_
 
 
-log = logging.getLogger(__name__)
-log.level = logging.DEBUG if DEBUG else logging.ERROR
-log.addHandler(logging.StreamHandler(sys.stderr))
-log.debug('ATTENTION!!! YOU USE DEBUG-MODE')
-
-
-def insert_data_from_xml_to_db(file_name):
+def insert_data_from_xml_to_db(file):
     session = Session()
-    q = session.query(PersonTimeChecker).order_by(PersonTimeChecker.report_id.desc())
-    if not session.query(q.exists()).scalar():
-        report_id = 1
-    else:
-        report_id = q.first().report_id + 1
-
+    report = Report(report_name=file.filename)
+    session.add(report)
+    session.commit()
     full_name = coming_datetime = leaving_datetime = None
     persons_to_db = []
-    context = iterparse(file_name, events=("start", "end"))
+    context = iterparse(file.file, events=("start", "end"))
     for event, elem in context:
         if event == 'start' and elem.tag == 'person':
             full_name = elem.attrib['full_name']
@@ -43,7 +32,7 @@ def insert_data_from_xml_to_db(file_name):
                 full_name=full_name,
                 coming_datetime=coming_datetime,
                 leaving_datetime=leaving_datetime,
-                report_id=report_id
+                report_id=report.report_id
             )
 
             if coming_datetime.date() != leaving_datetime.date():
@@ -89,10 +78,10 @@ def insert_data_from_xml_to_db(file_name):
     session.add_all(persons_to_db)
     session.commit()
     del context
-    return
+    return report
 
 
-def get_worked_time(report_id: int, person: str = None, from_date: datetime = None, to_date: datetime = None) -> list:
+def get_worked_time(report_id: int, person: str = None, from_date: datetime = None, to_date: datetime = None) -> dict:
     session = Session()
     seconds = func.sum(
         func.strftime('%s', PersonTimeChecker.leaving_datetime) - func.strftime('%s', PersonTimeChecker.coming_datetime)
@@ -107,9 +96,37 @@ def get_worked_time(report_id: int, person: str = None, from_date: datetime = No
     if from_date and to_date:
         query = query.filter(and_(grouped_date >= from_date.date(), grouped_date <= to_date.date()))
     elif from_date and not to_date:
-        query = query.filter(grouped_date >= from_date.date())
+        query = query.filter(grouped_date >= from_date)
     elif not from_date and to_date:
-        query = query.filter(grouped_date <= to_date.date())
+        query = query.filter(grouped_date <= to_date)
 
-    hours = {x[0]: round(x[1] / 3600, 2) for x in query.all()}
-    return hours
+    work_hours = {datetime.strptime(x[0], '%Y-%m-%d'): round(x[1] / 3600, 2) for x in query.all()}
+    return work_hours
+
+
+def get_all_reports():
+    session = Session()
+    reports = session.query(Report).all()
+    return reports
+
+
+def get_all_persons():
+    session = Session()
+    persons = session.query(PersonTimeChecker.full_name).group_by(PersonTimeChecker.full_name).all()
+    return persons
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
