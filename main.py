@@ -7,11 +7,17 @@ from fastapi import FastAPI, Request, File, UploadFile, Depends
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import OperationalError
 
 from queries import insert_data_from_xml_to_db, get_all_reports, get_worked_time, get_all_persons
 from models import Base, engine, SessionLocal
 
-Base.metadata.create_all(bind=engine)
+try:
+    Base.metadata.create_all(bind=engine)
+except OperationalError as e:
+    # when start with gunicorn, except error, that table exists
+    # and do not start container on old computer
+    log.debug(e)
 
 app = FastAPI()
 
