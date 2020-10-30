@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from app import app, get_db
+from main import app, get_db
 from models import Report, Base
 from config import DATETIME_FORMAT
 
@@ -116,4 +116,3 @@ def test_main():
                     assert data['result'][str_date] == value
             else:
                 assert payload['work_hours'] == data['result']
-

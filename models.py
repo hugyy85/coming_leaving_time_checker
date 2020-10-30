@@ -5,9 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-
 Base = declarative_base()
-
 
 engine = create_engine(DB_ENGINE, echo=False)
 
@@ -31,4 +29,3 @@ class Report(Base):
 
 SessionLocal = sessionmaker(bind=engine)
 SessionLocal.configure(bind=engine)
-

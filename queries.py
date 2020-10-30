@@ -6,9 +6,10 @@ from config import DATETIME_FORMAT, COUNT_PERSONS_TO_WRITE_IN_DB_FOR_ONE_QUERY, 
 
 from sqlalchemy import func, and_
 from sqlalchemy.orm import Session
+from fastapi import UploadFile
 
 
-def insert_data_from_xml_to_db(file, session):
+def insert_data_from_xml_to_db(file: UploadFile, session: Session) -> Report:
     report = Report(report_name=file.filename)
     session.add(report)
     session.commit()
@@ -81,13 +82,17 @@ def insert_data_from_xml_to_db(file, session):
     return report
 
 
-def get_worked_time(report_id: int, session: Session, person: str = None, from_date: datetime = None, to_date: datetime = None) -> dict:
+def get_worked_time(report_id: int,
+                    session: Session,
+                    person: str = None,
+                    from_date: datetime = None,
+                    to_date: datetime = None) -> dict:
     seconds = func.sum(
         func.strftime('%s', PersonTimeChecker.leaving_datetime) - func.strftime('%s', PersonTimeChecker.coming_datetime)
     )
     grouped_date = func.date(PersonTimeChecker.coming_datetime).label('grouped_date')
     query = session.query(
-        grouped_date, seconds)\
+        grouped_date, seconds) \
         .group_by('grouped_date').filter_by(report_id=report_id)
     if person:
         query = query.filter_by(full_name=person)
@@ -104,27 +109,11 @@ def get_worked_time(report_id: int, session: Session, person: str = None, from_d
     return work_hours
 
 
-def get_all_reports(session: Session):
+def get_all_reports(session: Session) -> list:
     reports = session.query(Report).all()
     return reports
 
 
-def get_all_persons(session: Session):
+def get_all_persons(session: Session) -> list:
     persons = session.query(PersonTimeChecker.full_name).group_by(PersonTimeChecker.full_name).all()
     return persons
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

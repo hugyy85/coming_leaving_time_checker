@@ -18,7 +18,6 @@ app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
 
-# Dependency
 async def get_db():
     db = SessionLocal()
     try:
@@ -65,9 +64,10 @@ async def show_result(request: Request, report_id: int,
         "who_worked": person
     }
     try:
-        context['work_hours'] = get_worked_time(report_id, session=db, from_date=from_date, to_date=to_date, person=person)
+        context['work_hours'] = get_worked_time(report_id, session=db, from_date=from_date, to_date=to_date,
+                                                person=person)
     except AssertionError:
         log.error(f'end time - {to_date} earlier than start time {from_date}')
-        context['error'] = f'Дата конца периода выбрана {to_date} выбрана ранее даты начала {from_date}'
+        context['error'] = f'Дата конца периода {to_date} выбрана ранее даты начала {from_date}'
     context['persons'] = get_all_persons(db)
     return templates.TemplateResponse("show_result.html", context)
