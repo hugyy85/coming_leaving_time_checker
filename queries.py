@@ -1,14 +1,14 @@
 from xml.etree.ElementTree import iterparse
 from datetime import datetime, timedelta
 
-from models import PersonTimeChecker, Session, Report
+from models import PersonTimeChecker, Report
 from config import DATETIME_FORMAT, COUNT_PERSONS_TO_WRITE_IN_DB_FOR_ONE_QUERY, log
 
 from sqlalchemy import func, and_
+from sqlalchemy.orm import Session
 
 
-def insert_data_from_xml_to_db(file):
-    session = Session()
+def insert_data_from_xml_to_db(file, session):
     report = Report(report_name=file.filename)
     session.add(report)
     session.commit()
@@ -81,8 +81,7 @@ def insert_data_from_xml_to_db(file):
     return report
 
 
-def get_worked_time(report_id: int, person: str = None, from_date: datetime = None, to_date: datetime = None) -> dict:
-    session = Session()
+def get_worked_time(report_id: int, session: Session, person: str = None, from_date: datetime = None, to_date: datetime = None) -> dict:
     seconds = func.sum(
         func.strftime('%s', PersonTimeChecker.leaving_datetime) - func.strftime('%s', PersonTimeChecker.coming_datetime)
     )
@@ -94,7 +93,8 @@ def get_worked_time(report_id: int, person: str = None, from_date: datetime = No
         query = query.filter_by(full_name=person)
 
     if from_date and to_date:
-        query = query.filter(and_(grouped_date >= from_date.date(), grouped_date <= to_date.date()))
+        assert from_date < to_date, f'end time - {to_date} earlier than start time {from_date}'
+        query = query.filter(and_(grouped_date >= from_date, grouped_date <= to_date))
     elif from_date and not to_date:
         query = query.filter(grouped_date >= from_date)
     elif not from_date and to_date:
@@ -104,14 +104,12 @@ def get_worked_time(report_id: int, person: str = None, from_date: datetime = No
     return work_hours
 
 
-def get_all_reports():
-    session = Session()
+def get_all_reports(session: Session):
     reports = session.query(Report).all()
     return reports
 
 
-def get_all_persons():
-    session = Session()
+def get_all_persons(session: Session):
     persons = session.query(PersonTimeChecker.full_name).group_by(PersonTimeChecker.full_name).all()
     return persons
 

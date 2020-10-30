@@ -1,4 +1,4 @@
-from config import DEBUG, DB_ENGINE
+from config import DB_ENGINE
 
 from sqlalchemy import Column, DateTime, VARCHAR, Integer, ForeignKey
 from sqlalchemy import create_engine
@@ -29,9 +29,6 @@ class Report(Base):
     report_name = Column(VARCHAR(1024), nullable=False)
 
 
-Base.metadata.create_all(engine)
-
-
-Session = sessionmaker(bind=engine)
-Session.configure(bind=engine)
+SessionLocal = sessionmaker(bind=engine)
+SessionLocal.configure(bind=engine)
 
