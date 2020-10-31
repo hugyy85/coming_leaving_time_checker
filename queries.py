@@ -1,4 +1,4 @@
-from xml.etree.ElementTree import iterparse
+from xml.etree.ElementTree import fromstring
 from datetime import datetime, timedelta
 
 from models import PersonTimeChecker, Report
@@ -13,18 +13,25 @@ def insert_data_from_xml_to_db(file: UploadFile, session: Session) -> Report:
     report = Report(report_name=file.filename)
     session.add(report)
     session.commit()
-    full_name = coming_datetime = leaving_datetime = None
     persons_to_db = []
-    context = iterparse(file.file, events=("start", "end"))
-    for event, elem in context:
-        if event == 'start' and elem.tag == 'person':
-            full_name = elem.attrib['full_name']
-        elif elem.tag == 'start':
-            coming_datetime = elem.text
-        elif elem.tag == 'end':
-            leaving_datetime = elem.text
+    first_line = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    new_result = first_line
+    for line in file.file:
+        line = line.decode("utf-8")
 
-        if event == 'end' and elem.tag == 'person':
+        if line == first_line:
+            continue
+        new_result += line
+        if line.strip() == '</person>':
+            new_result += '</people>'
+
+            root = fromstring(new_result)
+            person_tag = root.find('person')
+            full_name = person_tag.attrib['full_name']
+            coming_datetime = person_tag.find('start').text
+            leaving_datetime = person_tag.find('end').text
+            new_result = first_line + '<people>\n'
+
             coming_datetime = datetime.strptime(coming_datetime, DATETIME_FORMAT)
             leaving_datetime = datetime.strptime(leaving_datetime, DATETIME_FORMAT)
             assert leaving_datetime > coming_datetime, \
@@ -74,11 +81,8 @@ def insert_data_from_xml_to_db(file: UploadFile, session: Session) -> Report:
                 session.commit()
                 persons_to_db.clear()
 
-            elem.clear()
-
     session.add_all(persons_to_db)
     session.commit()
-    del context
     return report
 
 
