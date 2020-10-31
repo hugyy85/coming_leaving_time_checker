@@ -67,20 +67,14 @@ def test_main():
     assert len(reports) == len(test_files)
 
     checked_data = {
-        'new_small.xml': {
-            'work_hours': {datetime.datetime(2011, 12, 21, 0, 0): 17.12,
-                           datetime.datetime(2011, 12, 22, 0, 0): 8.32,
-                           datetime.datetime(2011, 12, 23, 0, 0): 14.33,
-                           datetime.datetime(2011, 12, 24, 0, 0): 10.99},
-            'persons': ['a.snova', 'a.snovkaa', 'a.stepanova', 'i.ivanov']
-        },
-        'new.xml': {
-            'work_hours': {datetime.datetime(2011, 12, 21, 0, 0): 171222.22,
-                           datetime.datetime(2011, 12, 22, 0, 0): 83180.56,
-                           datetime.datetime(2011, 12, 23, 0, 0): 13180.56},
-            'persons': ['a.snova', 'a.snovkaa', 'a.stepanova', 'i.ivanov']
-        },
-    }
+        'new_small.xml':
+            {'work_hours':
+                 {'21.12.2011': 17.12, '22.12.2011': 8.32, '23.12.2011': 14.33, '24.12.2011': 10.99},
+             'persons': ['a.snova', 'a.snovkaa', 'a.stepanova', 'i.ivanov']},
+        'new.xml':
+            {'work_hours': {'21.12.2011': 171222.22, '22.12.2011': 83180.56, '23.12.2011': 13180.56},
+             'persons': ['a.snova', 'a.snovkaa', 'a.stepanova', 'i.ivanov']}}
+
     # test show working_time
     for report in reports:
         response = client.get(f'/results/{report.report_id}')
@@ -108,11 +102,4 @@ def test_main():
             response = client.get(f'/results/{report.report_id}', params=params)
             assert response.status_code == 200
             payload = response.context
-
-            # this is done to synchronize datetime format from server and json file
-            if isinstance(payload['work_hours'], dict):
-                for date, value in payload['work_hours'].items():
-                    str_date = date.strftime(DATETIME_FORMAT)
-                    assert data['result'][str_date] == value
-            else:
-                assert payload['work_hours'] == data['result']
+            assert payload['work_hours'] == data['result']

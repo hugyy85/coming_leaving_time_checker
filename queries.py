@@ -105,7 +105,7 @@ def get_worked_time(report_id: int,
     elif not from_date and to_date:
         query = query.filter(grouped_date <= to_date)
 
-    work_hours = {datetime.strptime(x[0], '%Y-%m-%d'): round(x[1] / 3600, 2) for x in query.all()}
+    work_hours = {datetime.strptime(x[0], '%Y-%m-%d').strftime('%d.%m.%Y'): round(x[1] / 3600, 2) for x in query.all()}
     return work_hours
 
 
